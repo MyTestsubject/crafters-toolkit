@@ -5,10 +5,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
-    DATABASE_URL = (
+    DATABASE_URL: str = (
         "postgresql+psycopg://postgres:postgres@localhost:5432/crafters_toolkit"
     )
-    Debug: bool = False
+    DEBUG: bool = False
 
 
 settings = Settings()

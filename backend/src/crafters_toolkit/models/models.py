@@ -24,7 +24,7 @@ class Recipe(Base):
     __tablename__ = "recipes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), nullable=False)
+    output_item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), nullable=False)
     output_quantity: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
     output_item: Mapped["Item"] = relationship(back_populates="recipes_as_output")
@@ -33,27 +33,28 @@ class Recipe(Base):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<Recipe id={self.id} produces={self.item_id} qty={self.output_quantity}>"
-        )
+        return f"<Recipe id={self.id} produces={self.output_item_id} qty={self.output_quantity}>"
 
 
 class RecipeIngredient(Base):
     __tablename__ = "recipe_ingredients"
+    __table_args__ = (
+        UniqueConstraint(
+            "recipe_id",
+            "item_id",
+            name="unique_recipe_ingredient",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     recipe_id: Mapped[int] = mapped_column(
         ForeignKey("recipes.id", ondelete="CASCADE"), nullable=False
     )
-    item_id: Mapped[int] = mapped_column(ForeignKey("items.id", nullable=False))
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
     recipe: Mapped["Recipe"] = relationship(back_populates="ingredients")
     item: Mapped["Item"] = relationship()
-
-    __table_args__ = UniqueConstraint(
-        "recipe_id", "item_id", name="unique_recipe_ingredient"
-    )
 
     def __repr__(self) -> str:
         return f"<RecipeIngredient recipe={self.recipe_id} item={self.item_id} qty={self.quantity}>"

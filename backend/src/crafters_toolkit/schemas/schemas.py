@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, PositiveInt, Field
 
 
 # ---Item Schemas---
@@ -6,12 +6,10 @@ from pydantic import BaseModel, ConfigDict
 
 class ItemCreate(BaseModel):
     name: str
-    description: str | None = None
 
 
 class ItemUpdate(BaseModel):
-    name: str
-    description: str | None = None
+    name: str | None = None
 
 
 class ItemRead(BaseModel):
@@ -19,7 +17,6 @@ class ItemRead(BaseModel):
 
     id: int
     name: str
-    description: str | None = None
 
 
 # ---Recipe Ingredient Schemas---
@@ -27,37 +24,35 @@ class ItemRead(BaseModel):
 
 class RecipeIngredientCreate(BaseModel):
     item_id: int
-    quantity: int
+    quantity: PositiveInt
 
 
 class RecipeIngredientRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    quantity: int
+    quantity: PositiveInt
     item: ItemRead
 
 
 # ---Recipe Schemas---
 class RecipeCreate(BaseModel):
-    name: str
-    output_quantity: int = 1
-    description: str | None = None
-    ingredients: list[RecipeIngredientCreate]
+    output_item_id: int
+    output_quantity: PositiveInt
+    ingredients: list[RecipeIngredientCreate] = Field(min_length=1)
 
 
 class RecipeUpdate(BaseModel):
-    output_quantity: int | None = None
-    ingredients: list[RecipeIngredientRead] | None = None
+    output_quantity: PositiveInt | None = None
+    ingredients: list[RecipeIngredientCreate] | None = Field(default=None, min_length=1)
 
 
 class RecipeRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    item_id: int
-    output_quantity: int
     output_item: ItemRead
+    output_quantity: PositiveInt
     ingredients: list[RecipeIngredientRead]
 
 
@@ -66,11 +61,11 @@ class RecipeRead(BaseModel):
 
 class CraftOrder(BaseModel):
     recipe_id: int
-    quantity: int = 1
+    quantity: PositiveInt
 
 
 class CalculateRequest(BaseModel):
-    recipes: list[CraftOrder]
+    recipes: list[CraftOrder] = Field(min_length=1)
 
 
 class BaseMaterial(BaseModel):

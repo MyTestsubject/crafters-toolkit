@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from crafters_toolkit.db import get_db
@@ -13,7 +14,14 @@ router = APIRouter(prefix="/items", tags=["items"])
 def create_item(payload: ItemCreate, db: Session = Depends(get_db)):
     item = Item(**payload.model_dump())
     db.add(item)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Item with name '{payload.name}' already exists",
+        )
     db.refresh(item)
     return item
 
@@ -41,7 +49,14 @@ def update_item(item_id: int, payload: ItemUpdate, db: Session = Depends(get_db)
     update_data = payload.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(item, field, value)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Item with name '{payload.name}' already exists",
+        )
     return item
 
 
@@ -51,5 +66,12 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     db.delete(item)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Item is currently in use as an ingredient in one or more recipes",
+        )
     return Response(status_code=status.HTTP_204_NO_CONTENT)

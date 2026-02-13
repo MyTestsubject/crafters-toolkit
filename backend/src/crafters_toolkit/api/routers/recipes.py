@@ -127,6 +127,7 @@ def update_recipe(recipe_id: int, payload: RecipeUpdate, db: Session = Depends(g
 
     if payload.ingredients is not None:
         recipe.ingredients.clear()
+        db.flush()
         for ingredient in payload.ingredients:
             recipe.ingredients.append(
                 RecipeIngredient(
